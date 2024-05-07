@@ -48,6 +48,7 @@ COMMIT;
 
 BEGIN;
 ALTER TABLE assertion_details_formatted add column affiliations json;
+ALTER TABLE assertion_details_formatted ALTER COLUMN affiliations set DEFAULT '[]'::json;
 CREATE TEMPORARY TABLE grouped_affiliations AS
     SELECT a.id,
     coalesce(json_agg(json_build_object('title', aff.title, 'external_id', aff.external_id)) filter (where aff.title is not null or aff.external_id is not null), '[]'::json) as affiliations
@@ -64,6 +65,7 @@ UPDATE assertion_details_formatted as adf
 COMMIT;
 BEGIN;
 ALTER TABLE assertion_details_formatted add column funders json;
+ALTER TABLE assertion_details_formatted ALTER COLUMN funders set DEFAULT '[]'::json;
 CREATE TEMPORARY TABLE grouped_funders AS
     SELECT a.id,
     coalesce(json_agg(json_build_object('title', f.title, 'external_id', f.external_id)) filter (where f.title is not null or f.external_id is not null), '[]'::json) as funders
@@ -79,6 +81,7 @@ UPDATE assertion_details_formatted as adf
     where adf.id=gf.id;
 COMMIT;
 ALTER TABLE assertion_details_formatted add column subjects json;
+ALTER TABLE assertion_details_formatted ALTER COLUMN subjects set DEFAULT '[]'::json;
 CREATE TEMPORARY TABLE grouped_subjects AS
     SELECT a.id,
     coalesce(json_agg(s.title) filter (where s.title is not null), '[]'::json) as subjects
