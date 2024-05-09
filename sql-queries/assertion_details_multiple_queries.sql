@@ -2,14 +2,8 @@ BEGIN;
 CREATE TABLE assertion_details_formatted AS
 select
 a.id,
-a.created as created_at,
-a.updated as updated_at,
-a.title,
-a.obj_id as objId,
-a.subj_id as subjId,
-a.published_date as publishedDate,
-a.accession_number as accessionNumber,
-a.doi,
+a.created as created,
+a.updated as updated,
 case
     when r.title is not null or r.external_id is not null
         then json_build_object('title', r.title, 'external_id', r.external_id)
@@ -22,10 +16,17 @@ case
 end publisher,
 case
     when j.title is not null or j.external_id is not null
-        then json_build_object('title', r.title, 'external_id', r.external_id)
+        then json_build_object('title', j.title, 'external_id', j.external_id)
     else '{}'::json
 end journal,
-s.abbreviation as source_abbreviation
+a.title,
+a.obj_id as objId,
+a.subj_id as subjId,
+a.published_date as publishedDate,
+a.accession_number as accessionNumber,
+a.doi,
+a.relation_type_id as relationTypeId,
+s.abbreviation as source
 from assertions as a
 left join repositories as r
     on r.id = a.repository_id

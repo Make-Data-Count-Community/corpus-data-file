@@ -1,9 +1,9 @@
 BEGIN;
   CREATE MATERIALIZED VIEW assertion_details_materialized_view AS
-  SELECT 
+  SELECT
     assertions.id,
-    assertions.created as created_at,
-    assertions.updated as updated_at,
+    assertions.created as created,
+    assertions.updated as updated,
     COALESCE(
         (
             SELECT json_build_object('title', repo.title, 'external_id', repo.external_id)
@@ -23,7 +23,7 @@ BEGIN;
     COALESCE(
         (
             SELECT json_build_object('title', journals.title, 'external_id', journals.external_id)
-            FROM journals 
+            FROM journals
             WHERE journals.id = assertions.journal_id
         ),
         '{}'::json
@@ -34,6 +34,7 @@ BEGIN;
     assertions.published_date as publishedDate,
     assertions.accession_number as accessionNumber,
     assertions.doi,
+    assertions.relation_type_id as relationTypeId,
     COALESCE(
         (
             SELECT sources.abbreviation
@@ -63,12 +64,12 @@ BEGIN;
     COALESCE(
         (
             SELECT JSON_AGG(json_build_object('title', funders.title, 'external_id', funders.external_id))
-            FROM funders 
+            FROM funders
             INNER JOIN assertions_affiliations AS aa ON funders.id = aa.affiliation_id
             WHERE aa.assertion_id = assertions.id
         ),
         '[]'
     ) AS funders
-  FROM 
+  FROM
       assertions;
 COMMIT;
