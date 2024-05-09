@@ -58,9 +58,9 @@ CREATE TEMPORARY TABLE grouped_affiliations AS
     on a.id = aa.assertion_id
     join affiliations aff
     ON aff.id = aa.affiliation_id
-    GROUP BY a.id
+    GROUP BY a.id;
 UPDATE assertion_details_formatted as adf
-    set affiliations = gf.affiliations
+    set affiliations = ga.affiliations
     from grouped_affiliations ga
     where adf.id=ga.id;
 COMMIT;
