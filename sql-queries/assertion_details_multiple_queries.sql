@@ -20,12 +20,12 @@ case
     else '{}'::json
 end journal,
 a.title,
-a.obj_id as objId,
-a.subj_id as subjId,
-a.published_date as publishedDate,
-a.accession_number as accessionNumber,
+a.obj_id as "objId",
+a.subj_id as "subjId",
+a.published_date as "publishedDate",
+a.accession_number as "accessionNumber",
 a.doi,
-a.relation_type_id as relationTypeId,
+a.relation_type_id as "relationTypeId",
 s.abbreviation as source
 from assertions as a
 left join repositories as r
@@ -75,7 +75,7 @@ CREATE TEMPORARY TABLE grouped_funders AS
     on a.id = af.assertion_id
     join funders f
     ON f.id = af.funder_id
-    GROUP BY a.id
+    GROUP BY a.id;
 UPDATE assertion_details_formatted as adf
     set funders = gf.funders
     from grouped_funders gf
@@ -91,12 +91,22 @@ CREATE TEMPORARY TABLE grouped_subjects AS
     on a.id = asub.assertion_id
     join subjects s
     ON s.id = asub.subject_id
-    GROUP BY a.id
+    GROUP BY a.id;
 UPDATE assertion_details_formatted as adf
     set subjects = gs.subjects
     from grouped_subjects gs
     where adf.id=gs.id;
 COMMIT;
-
+BEGIN;
+UPDATE assertion_details_formatted
+    SET affiliations = '[]'::json
+    WHERE affiliations is null;
+UPDATE assertion_details_formatted
+    SET funders = '[]'::json
+    WHERE funders is null;
+UPDATE assertion_details_formatted
+    SET subjects = '[]'::json
+    WHERE subjects is null;
+COMMIT;
 
 
