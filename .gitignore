@@ -1,4 +1,1 @@
-export-script/data-citation-corpus-v1.1-output/
-**/**/*.json
-**/**/*.csv
-**/**/*.zip
+data-citation-corpus-v1.1-output/**
