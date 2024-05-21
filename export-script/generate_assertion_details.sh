@@ -9,10 +9,6 @@ SCRIPT_PARENT_DIR=$( cd "$( dirname "$( cd "$( dirname "${BASH_SOURCE[0]}" )" &&
 
 source "$SCRIPT_PARENT_DIR/.env"
 
-DB_HOST=$DB_HOST
-DB_NAME=$DB_NAME
-DB_USER=$DB_USER
-PG_PASSWORD=$PG_PASSWORD
 QUERY_PREFIX="SELECT json_agg(t) FROM (SELECT * FROM assertion_details_formatted ORDER BY id OFFSET "
 QUERY_SUFFIX=" LIMIT 1000000) t;"
 MAIN_OUTPUT_DIR="$SCRIPT_PARENT_DIR/data-citation-corpus-v1.1-output"
