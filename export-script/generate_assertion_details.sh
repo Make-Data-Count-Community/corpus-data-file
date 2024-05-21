@@ -7,7 +7,19 @@
 
 SCRIPT_PARENT_DIR=$( cd "$( dirname "$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )" )" && pwd )
 
-source "$SCRIPT_PARENT_DIR/.env"
+ENV_FILE="$SCRIPT_PARENT_DIR/.env"
+
+if [[ ! -f "$ENV_FILE" ]]; then
+    echo "Error: .env file not found in $SCRIPT_PARENT_DIR, copy the .env.example file to .env and update the values."
+    exit 1
+fi
+
+source "$ENV_FILE"
+
+if [[ -z "$DB_HOST" || -z "$DB_USER" || -z "$DB_NAME" || -z "$PG_PASSWORD" ]]; then
+    echo "Error: Required environment variables are not set in the .env file"
+    exit 1
+fi
 
 QUERY_PREFIX="SELECT json_agg(t) FROM (SELECT * FROM assertion_details_formatted ORDER BY id OFFSET "
 QUERY_SUFFIX=" LIMIT 1000000) t;"
