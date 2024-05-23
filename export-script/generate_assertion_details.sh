@@ -5,16 +5,24 @@
 # - psql (PostgreSQL client) installed on the local machine
 # - Access to the PostgreSQL database (host, name, user, and password)
 
-# Prompt the user for the PostgreSQL password
-read -s -p "Enter the PostgreSQL password: " PG_PASSWORD
-echo
+SCRIPT_PARENT_DIR=$( cd "$( dirname "$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )" )" && pwd )
 
-DB_HOST="corpus-dev-dump-2024-05-06.cpcwgoa3uzw1.eu-west-1.rds.amazonaws.com"
-DB_NAME="datacite"
-DB_USER="postgres"
+ENV_FILE="$SCRIPT_PARENT_DIR/.env"
+
+if [[ ! -f "$ENV_FILE" ]]; then
+    echo "Error: .env file not found in $SCRIPT_PARENT_DIR, copy the .env.example file to .env and update the values."
+    exit 1
+fi
+
+source "$ENV_FILE"
+
+if [[ -z "$DB_HOST" || -z "$DB_USER" || -z "$DB_NAME" || -z "$PG_PASSWORD" ]]; then
+    echo "Error: Required environment variables are not set in the .env file"
+    exit 1
+fi
+
 QUERY_PREFIX="SELECT json_agg(t) FROM (SELECT * FROM assertion_details_formatted ORDER BY id OFFSET "
 QUERY_SUFFIX=" LIMIT 1000000) t;"
-SCRIPT_PARENT_DIR=$( cd "$( dirname "$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )" )" && pwd )
 MAIN_OUTPUT_DIR="$SCRIPT_PARENT_DIR/data-citation-corpus-v1.1-output"
 JSON_OUTPUT_DIR="$MAIN_OUTPUT_DIR/json"
 CSV_OUTPUT_DIR="$MAIN_OUTPUT_DIR/csv"
