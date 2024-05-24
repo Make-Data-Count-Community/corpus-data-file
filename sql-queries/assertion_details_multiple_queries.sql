@@ -1,5 +1,9 @@
 BEGIN;
-CREATE TABLE assertion_details_formatted AS
+DROP TABLE IF EXISTS assertion_details_formatted;
+COMMIT;
+
+BEGIN;
+CREATE TABLE IF NOT EXISTS assertion_details_formatted AS
 select
 a.id,
 a.created as created,
