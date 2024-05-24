@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# This script generates assertion details from the PostgreSQL database and saves them to JSON files.
+# This script creates assertion details from the PostgreSQL database.
 # The script is designed to run on a local machine and requires the following:
 # - psql (PostgreSQL client) installed on the local machine
 # - Access to the PostgreSQL database (host, name, user, and password)
@@ -23,6 +23,17 @@ fi
 
 FILE_PATH="$SCRIPT_PARENT_DIR/sql-queries/assertion_details_multiple_queries.sql"
 
+start_time=$(date +%s)
+
 echo "creating assertion details table in the database..."
 PGPASSWORD="$PG_PASSWORD" psql -f "$FILE_PATH" -h "$DB_HOST" -U "$DB_USER" -d "$DB_NAME"
 echo "assertion details table created successfully."
+
+end_time=$(date +%s)
+
+total_elapsed_time=$((end_time - start_time))
+total_hours=$((total_elapsed_time / 3600))
+total_minutes=$(( (total_elapsed_time % 3600) / 60 ))
+total_seconds=$((total_elapsed_time % 60))
+
+echo "Total time taken by the entire script: $total_hours hours, $total_minutes minutes, and $total_seconds seconds."
