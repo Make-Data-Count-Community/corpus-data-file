@@ -4,6 +4,7 @@
 # The script is designed to run on a local machine and requires the following:
 # - psql (PostgreSQL client) installed on the local machine
 # - Access to the PostgreSQL database (host, name, user, and password)
+# - .env file in the root directory with values set for $DB_NAME, $DB_HOST, $DB_USER and $PG_PASSWORD
 
 SCRIPT_PARENT_DIR=$( cd "$( dirname "$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )" )" && pwd )
 
