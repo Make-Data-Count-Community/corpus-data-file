@@ -53,10 +53,10 @@ def get_all_data(json_file, output_dir):
         subjects = '; '.join(record.get('subjects', []))
 
         # Affiliations
-        affiliations = '; '.join([f"{aff['title']} {aff['external_id'] if aff.get('external_id') else ''}" for aff in record.get('affiliations', [])])
+        affiliations = '; '.join([f"{aff['title']}{' ' + aff['external_id'] if aff.get('external_id') else ''}" for aff in record.get('affiliations', [])])
 
         # Funders
-        funders = '; '.join([f"{funder['title']} {funder['external_id'] if funder.get('external_id') else ''}" for funder in record.get('funders', [])])
+        funders = '; '.join([f"{funder['title']}{' ' + funder['external_id'] if funder.get('external_id') else ''}" for funder in record.get('funders', [])])
 
         with open(outfile, 'a', newline='', encoding='utf-8') as f_out:
             writer = csv.writer(f_out)
