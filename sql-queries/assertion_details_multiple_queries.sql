@@ -1,5 +1,9 @@
 BEGIN;
-CREATE TABLE assertion_details_formatted AS
+DROP TABLE IF EXISTS assertion_details_formatted;
+COMMIT;
+
+BEGIN;
+CREATE TABLE IF NOT EXISTS assertion_details_formatted AS
 select
 a.id,
 a.created as created,
@@ -64,6 +68,7 @@ UPDATE assertion_details_formatted as adf
     from grouped_affiliations ga
     where adf.id=ga.id;
 COMMIT;
+
 BEGIN;
 ALTER TABLE assertion_details_formatted add column funders json;
 ALTER TABLE assertion_details_formatted ALTER COLUMN funders set DEFAULT '[]'::json;
@@ -81,6 +86,8 @@ UPDATE assertion_details_formatted as adf
     from grouped_funders gf
     where adf.id=gf.id;
 COMMIT;
+
+BEGIN;
 ALTER TABLE assertion_details_formatted add column subjects json;
 ALTER TABLE assertion_details_formatted ALTER COLUMN subjects set DEFAULT '[]'::json;
 CREATE TEMPORARY TABLE grouped_subjects AS
@@ -97,6 +104,7 @@ UPDATE assertion_details_formatted as adf
     from grouped_subjects gs
     where adf.id=gs.id;
 COMMIT;
+
 BEGIN;
 UPDATE assertion_details_formatted
     SET affiliations = '[]'::json
