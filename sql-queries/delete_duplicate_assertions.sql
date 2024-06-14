@@ -1,5 +1,18 @@
 BEGIN;
 
+ALTER TABLE assertions_funders
+DROP CONSTRAINT assertions_funders_assertion_id_fkey;
+
+ALTER TABLE assertions_funders
+ADD CONSTRAINT assertions_funders_assertion_id_fkey
+FOREIGN KEY (assertion_id)
+REFERENCES assertions (id)
+ON DELETE CASCADE;
+
+COMMIT;
+
+BEGIN;
+
 WITH ranked_assertions AS (
     SELECT *,
            ROW_NUMBER() OVER (PARTITION BY obj_id, subj_id, repository_id, publisher_id, journal_id, accession_number, source_id ORDER BY updated DESC) AS rn
