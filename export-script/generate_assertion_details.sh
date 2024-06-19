@@ -4,7 +4,7 @@
 # The script is designed to run on a local machine and requires the following:
 # - psql (PostgreSQL client) installed on the local machine
 # - Access to the PostgreSQL database (host, name, user, and password)
-# - .env file in the root directory with values set for $DB_NAME, $DB_HOST, $DB_USER and $PG_PASSWORD
+# - .env file in the root directory with values set for $DB_NAME, $DB_HOST, $DB_USER and $DB_PASSWORD
 
 SCRIPT_PARENT_DIR=$( cd "$( dirname "$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )" )" && pwd )
 
@@ -17,7 +17,7 @@ fi
 
 source "$ENV_FILE"
 
-if [[ -z "$DB_HOST" || -z "$DB_USER" || -z "$DB_NAME" || -z "$PG_PASSWORD" ]]; then
+if [[ -z "$DB_HOST" || -z "$DB_USER" || -z "$DB_NAME" || -z "$DB_PASSWORD" ]]; then
     echo "Error: Required environment variables are not set in the .env file"
     exit 1
 fi
@@ -29,7 +29,7 @@ JSON_OUTPUT_DIR="$MAIN_OUTPUT_DIR/json"
 CSV_OUTPUT_DIR="$MAIN_OUTPUT_DIR/csv"
 CURRENT_DATE=$(date +%Y-%m-%d)
 CHUNK_SIZE=1000000
-TOTAL_RECORDS=$(PGPASSWORD="$PG_PASSWORD" psql -h "$DB_HOST" -U "$DB_USER" -d "$DB_NAME" -tA -c "SELECT COUNT(*) FROM assertion_details_formatted;")
+TOTAL_RECORDS=$(PGPASSWORD="$DB_PASSWORD" psql -h "$DB_HOST" -U "$DB_USER" -d "$DB_NAME" -tA -c "SELECT COUNT(*) FROM assertion_details_formatted;")
 FILE_NUMBER=0
 JSON_ZIP_FILENAME="${CURRENT_DATE}-data-citation-corpus-v1.1-json.zip"
 CSV_ZIP_FILENAME="${CURRENT_DATE}-data-citation-corpus-v1.1-csv.zip"
@@ -55,7 +55,7 @@ function run_query_and_save_json() {
     local output_file="$JSON_OUTPUT_DIR/${CURRENT_DATE}-data-citation-corpus-${file_number_padded}-v1.1.json"
     local query="$QUERY_PREFIX$offset$QUERY_SUFFIX"
     local start_time=$(date +%s)
-    PGPASSWORD="$PG_PASSWORD" psql -h "$DB_HOST" -U "$DB_USER" -d "$DB_NAME" -tA -c "SET CLIENT_ENCODING TO 'UTF8'; $query" -o "$output_file"
+    PGPASSWORD="$DB_PASSWORD" psql -h "$DB_HOST" -U "$DB_USER" -d "$DB_NAME" -tA -c "SET CLIENT_ENCODING TO 'UTF8'; $query" -o "$output_file"
     local end_time=$(date +%s)
     local elapsed_time=$((end_time - start_time))
     local hours=$((elapsed_time / 3600))
