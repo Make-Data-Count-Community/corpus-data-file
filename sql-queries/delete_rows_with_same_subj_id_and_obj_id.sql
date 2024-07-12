@@ -39,7 +39,7 @@ SELECT *
 FROM assertions_funders_temp
 WHERE assertion_id IN (SELECT id FROM assertions);
 
-DROP TABLE non_clinical_trial_assertions;
+DROP TABLE subj_id_obj_id;
 DROP TABLE assertions_affiliations_temp;
 DROP TABLE assertions_funders_temp;
 DROP TABLE assertions_subjects_temp;
