@@ -98,6 +98,10 @@ python accession_number_validation.py
 
 ## Data Removal Specifications
 
+## Data Removal Specifications
+
+This section outlines the steps and SQL queries used to clean and refine the dataset by removing duplicate, non-citation, clinical trial, orphaned records and invalid citations. The aim is to ensure the integrity and relevance of the dataset by retaining only the most pertinent and accurate data points.
+
 ### Initial Assertion Records
 - **Total Initial Records**: 10,006,058
 
