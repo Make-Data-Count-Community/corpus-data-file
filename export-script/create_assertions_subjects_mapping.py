@@ -6,10 +6,8 @@ import time
 from dotenv import load_dotenv
 from psycopg2 import sql
 
-# Load environment variables
 load_dotenv()
 
-# Database connection details
 conn_params = {
     'dbname': os.getenv('DB_NAME'),
     'user': os.getenv('DB_USER'),
@@ -18,7 +16,6 @@ conn_params = {
     'port': os.getenv('DB_PORT')
 }
 
-# Define a hash mapping repository_id to subject_ids
 repository_subjects = {
     "00363b65-f3ef-4fa9-8255-23ab269f4930": [
         "84fe679f-156c-4090-b25e-f752b3f8ea92",  # biological sciences
@@ -185,12 +182,10 @@ repository_subjects = {
 }
 
 try:
-    # Connect to the PostgreSQL database
     conn = psycopg2.connect(**conn_params)
     cursor = conn.cursor()
 
     for repository_id, subject_ids in repository_subjects.items():
-        # Get all assertion_ids for the current repository_id
         cursor.execute(
             sql.SQL("SELECT id FROM assertions WHERE repository_id = %s"),
             [repository_id]
@@ -199,13 +194,11 @@ try:
 
         for assertion_id in assertion_ids:
             for subject_id in subject_ids:
-                # Insert into assertions_subjects
                 cursor.execute(
                     sql.SQL("INSERT INTO assertions_subjects (assertion_id, subject_id) VALUES (%s, %s)"),
                     [assertion_id[0], subject_id]
                 )
 
-    # Commit the changes
     conn.commit()
 
 except Exception as error:
