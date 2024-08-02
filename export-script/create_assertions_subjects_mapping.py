@@ -4,6 +4,9 @@ from dotenv import load_dotenv
 import os
 from uuid import uuid4
 from datetime import datetime
+import logging
+from multiprocessing import Pool, cpu_count
+from itertools import repeat
 from io import StringIO
 
 # Load the environment variables from the .env file
@@ -15,6 +18,10 @@ user = os.getenv('DB_USER')
 password = os.getenv('PG_PASSWORD')
 host = os.getenv('DB_HOST')
 port = os.getenv('DB_PORT')
+
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 # Database connection details
 conn_params = {
@@ -77,88 +84,68 @@ repository_subject_mapping = {
     'd3ee57d1-bce4-437d-b054-e686d9abc727': ['Basic medicine', 'Chemical sciences', 'Biological sciences']
 }
 
+def get_connection():
+    return psycopg2.connect(**conn_params)
 
-# Connect to the PostgreSQL database
-conn = psycopg2.connect(**conn_params)
-cur = conn.cursor()
-
-try:
-    # Connect to the PostgreSQL database
-    conn = psycopg2.connect(**conn_params)
+def fetch_subject_ids():
+    conn = get_connection()
     cur = conn.cursor()
-
-    # Ensure the titles in the 'subjects' table are lowercase
-    cur.execute("UPDATE subjects SET title = LOWER(title);")
-
-    # Insert new subjects if they don't exist
-    for subject in subjects:
-        cur.execute(sql.SQL("""
-            INSERT INTO subjects (id, title, type, created, updated)
-            SELECT gen_random_uuid(), %s, 'subject', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
-            WHERE NOT EXISTS (
-                SELECT 1 FROM subjects WHERE LOWER(title) = LOWER(%s)
-            );
-        """), [subject, subject])
-
-    # Fetch subject IDs from the database
     cur.execute("""
         SELECT id, title FROM subjects 
         WHERE title IN %s;
     """, (tuple(subject.lower() for subject in subjects),))
     subject_ids = {row[1]: row[0] for row in cur.fetchall()}
+    cur.close()
+    conn.close()
+    return subject_ids
 
-    # Print the mapping to verify
-    print("Subject IDs fetched from the database:")
-    for title, id in subject_ids.items():
-        print(f"Subject ID: {id}, Title: {title}")
+def insert_batch(batch):
+    conn = get_connection()
+    cur = conn.cursor()
+    cur.copy_expert(sql.SQL("""
+        COPY assertions_subjects (id, type, created, updated, assertion_id, subject_id, inferred)
+        FROM STDIN WITH CSV
+    """), batch)
+    conn.commit()
+    cur.close()
+    conn.close()
 
-    # Insert mapping into assertions_subjects table
-    total_inserted = 0
-    for repo_id, subjects in repository_subject_mapping.items():
-        # Fetch all assertion IDs for the given repository
-        cur.execute("""
-            SELECT id FROM assertions
-            WHERE repository_id = %s;
-        """, (repo_id,))
-        assertion_ids = [row[0] for row in cur.fetchall()]
+def process_repository(repo_id, subject_ids):
+    conn = get_connection()
+    cur = conn.cursor()
+    logger.info(f"Processing repository_id: {repo_id}")
+    cur.execute("""
+        SELECT id FROM assertions
+        WHERE repository_id = %s;
+    """, (repo_id,))
+    assertion_ids = [row[0] for row in cur.fetchall()]
+    cur.close()
+    conn.close()
 
-        # Batch insert assertion_subject mappings
-        insert_values = []
-        for assertion_id in assertion_ids:
-            for subject in subjects:
-                subject_id = subject_ids.get(subject.lower())
-                if subject_id:
-                    insert_values.append((
-                        str(uuid4()), 'assertion_subject', datetime.now(), datetime.now(), assertion_id, subject_id, False
-                    ))
+    batch = StringIO()
+    for assertion_id in assertion_ids:
+        for subject in repository_subject_mapping[repo_id]:
+            subject_id = subject_ids.get(subject.lower())
+            if subject_id:
+                batch.write(f"{uuid4()},assertionSubject,{datetime.now()},{datetime.now()},{assertion_id},{subject_id},False\n")
+                if batch.tell() >= 10 * 1024 * 1024:  # Flush every 10MB
+                    batch.seek(0)
+                    insert_batch(batch)
+                    batch = StringIO()
 
-                    # Print progress for every 1000 insertions
-                    if len(insert_values) % 1000 == 0:
-                        cur.executemany("""
-                            INSERT INTO assertions_subjects (id, "type", created, updated, assertion_id, subject_id, inferred)
-                            VALUES (%s, %s, %s, %s, %s, %s, %s);
-                        """, insert_values)
-                        conn.commit()
-                        total_inserted += len(insert_values)
-                        print(f"Inserted {total_inserted} rows into assertions_subjects...")
-                        insert_values.clear()
+    if batch.tell() > 0:
+        batch.seek(0)
+        insert_batch(batch)
 
-        # Insert any remaining rows
-        if insert_values:
-            cur.executemany("""
-                INSERT INTO assertions_subjects (id, "type", created, updated, assertion_id, subject_id, inferred)
-                VALUES (%s, %s, %s, %s, %s, %s, %s);
-            """, insert_values)
-            conn.commit()
-            total_inserted += len(insert_values)
-            print(f"Inserted {total_inserted} rows into assertions_subjects...")
+def main():
+    subject_ids = fetch_subject_ids()
+    
+    pool = Pool(cpu_count())
+    pool.starmap(process_repository, zip(repository_subject_mapping.keys(), repeat(subject_ids)))
+    pool.close()
+    pool.join()
 
-    print("All insertions completed successfully.")
+    logger.info("All insertions completed successfully.")
 
-except Exception as e:
-    print(f"Error: {e}")
-finally:
-    if conn:
-        cur.close()
-        conn.close()
-        print("Database connection closed.")
+if __name__ == "__main__":
+    main()
