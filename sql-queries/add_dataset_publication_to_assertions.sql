@@ -13,4 +13,4 @@ SET dataset = obj_id,
     publication = subj_id
 WHERE source_type = 'crossref';
 
-COMMIT:
+COMMIT;
