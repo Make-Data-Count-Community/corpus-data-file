@@ -1,6 +1,6 @@
 BEGIN;
 
-ALTER TABLE assertions ADD COLUMN dataset VARCHAR(255), ADD COLUMN publication VARCHAR(255);
+ALTER TABLE assertions ADD COLUMN dataset TEXT, ADD COLUMN publication TEXT;
 
 UPDATE assertions
 SET dataset = subj_id,
