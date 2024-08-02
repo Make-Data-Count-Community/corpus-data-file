@@ -114,11 +114,25 @@ def process_repository(repo_id, subject_ids):
     conn = get_connection()
     cur = conn.cursor()
     logger.info(f"Processing repository_id: {repo_id}")
+
+    # Fetch assertion IDs
     cur.execute("""
         SELECT id FROM assertions
         WHERE repository_id = %s;
     """, (repo_id,))
     assertion_ids = [row[0] for row in cur.fetchall()]
+
+    # Fetch existing mappings
+    existing_mappings_query = """
+    SELECT assertion_id, subject_id
+    FROM assertions_subjects
+    WHERE assertion_id = ANY(ARRAY[{}]::uuid[]) AND subject_id = ANY(ARRAY[{}]::uuid[]);
+    """.format(
+        ','.join(f"'{id}'" for id in assertion_ids),
+        ','.join(f"'{id}'" for id in subject_ids.values())
+    )
+    cur.execute(existing_mappings_query)
+    existing_mappings = set((row[0], row[1]) for row in cur.fetchall())
     cur.close()
     conn.close()
 
@@ -126,7 +140,7 @@ def process_repository(repo_id, subject_ids):
     for assertion_id in assertion_ids:
         for subject in repository_subject_mapping[repo_id]:
             subject_id = subject_ids.get(subject.lower())
-            if subject_id:
+            if subject_id and (assertion_id, subject_id) not in existing_mappings:
                 batch.write(f"{uuid4()},assertionSubject,{datetime.now()},{datetime.now()},{assertion_id},{subject_id},False\n")
                 if batch.tell() >= 10 * 1024 * 1024:  # Flush every 10MB
                     batch.seek(0)
@@ -139,7 +153,7 @@ def process_repository(repo_id, subject_ids):
 
 def main():
     subject_ids = fetch_subject_ids()
-    
+
     pool = Pool(cpu_count())
     pool.starmap(process_repository, zip(repository_subject_mapping.keys(), repeat(subject_ids)))
     pool.close()
