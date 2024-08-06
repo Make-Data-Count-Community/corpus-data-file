@@ -87,6 +87,33 @@ repository_subject_mapping = {
 def get_connection():
     return psycopg2.connect(**conn_params)
 
+def add_unique_constraint():
+    """Adds a unique constraint to the title column in the subjects table if it does not already exist."""
+    conn = get_connection()
+    cur = conn.cursor()
+    try:
+        # Check if the constraint already exists
+        cur.execute("""
+            SELECT 1 
+            FROM pg_constraint 
+            WHERE conname = 'unique_title';
+        """)
+        if cur.fetchone():
+            logger.info("Unique constraint already exists on subjects table.")
+        else:
+            # Add the unique constraint
+            cur.execute("""
+                ALTER TABLE subjects
+                ADD CONSTRAINT unique_title UNIQUE (title);
+            """)
+            conn.commit()
+            logger.info("Unique constraint added to subjects table.")
+    except Exception as e:
+        logger.error(f"Error adding unique constraint: {e}")
+    finally:
+        cur.close()
+        conn.close()
+
 def lowercase_subject_titles():
     """Converts all subject titles in the subjects table to lowercase."""
     conn = get_connection()
@@ -185,6 +212,7 @@ def process_repository(repo_id, subject_ids):
         insert_batch(batch)
 
 def main():
+    add_unique_constraint()
     insert_missing_subjects()
     lowercase_subject_titles()
     subject_ids = fetch_subject_ids()
