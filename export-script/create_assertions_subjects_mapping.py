@@ -87,7 +87,40 @@ repository_subject_mapping = {
 def get_connection():
     return psycopg2.connect(**conn_params)
 
+def lowercase_subject_titles():
+    """Converts all subject titles in the subjects table to lowercase."""
+    conn = get_connection()
+    cur = conn.cursor()
+    cur.execute("UPDATE subjects SET title = LOWER(title);")
+    conn.commit()
+    cur.close()
+    conn.close()
+    logger.info("Converted all subject titles to lowercase.")
+
+def insert_missing_subjects():
+    """Inserts subjects into the database if they do not exist."""
+    conn = get_connection()
+    cur = conn.cursor()
+    for subject in subjects:
+        cur.execute("""
+            INSERT INTO subjects (id, title, type, created, updated)
+            VALUES (%s, %s, %s, %s, %s)
+            ON CONFLICT (title) DO NOTHING;
+        """, (
+            str(uuid4()), 
+            subject.lower(), 
+            'subject',
+            datetime.now(),
+            datetime.now()
+        ))
+    conn.commit()
+    cur.close()
+    conn.close()
+    logger.info("Inserted missing subjects into the database.")
+
+
 def fetch_subject_ids():
+    """Fetches the subject IDs for the given subject titles from the database."""
     conn = get_connection()
     cur = conn.cursor()
     cur.execute("""
@@ -152,6 +185,8 @@ def process_repository(repo_id, subject_ids):
         insert_batch(batch)
 
 def main():
+    insert_missing_subjects()
+    lowercase_subject_titles()
     subject_ids = fetch_subject_ids()
 
     pool = Pool(cpu_count())
