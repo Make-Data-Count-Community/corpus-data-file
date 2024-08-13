@@ -52,10 +52,25 @@ WHERE title ~ '^(?!.*\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b$).*([A-
 
 
 -- Step 4: Update rows where the title contains 'E‐mail:' or 'Electronic address:' to emptry string
-UPDATE affiliations 
-SET title = REGEXP_REPLACE(title, 'E‐mail:|Electronic address:', '', 'g')
-WHERE title ~ 'E‐mail:|Electronic address:';
-
+WITH prefix_removed AS (
+    -- Remove specific prefixes from titles
+    SELECT 
+        id,
+        REGEXP_REPLACE(
+            title, 
+            'E‐mail:|Electronic address:|E-mail: |Electronic address|E-mail', 
+            '', 
+            'g'
+        ) AS title_without_prefixes
+    FROM 
+        affiliations
+    WHERE 
+        title ~ 'E‐mail:|Electronic address:|E-mail: |Electronic address|E-mail'
+)
+UPDATE affiliations
+SET title = prefix_removed.title_without_prefixes
+FROM prefix_removed
+WHERE affiliations.id = prefix_removed.id;
 
 
 -- Step 5: Update titles to leading/trailing spaces, and special characters
