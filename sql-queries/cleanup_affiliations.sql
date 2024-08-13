@@ -51,25 +51,22 @@ SET title = regexp_replace(
 WHERE title ~ '^(?!.*\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b$).*([A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}).*$';
 
 
--- Step 4: Delete rows where the title contains 'E‐mail:' or 'Electronic address:' prefixes and remove corresponding rows from assertions_affiliations
-DELETE FROM assertions_affiliations
-WHERE affiliation_id IN (
-    SELECT id FROM affiliations WHERE title ~ 'E‐mail:|Electronic address:'
-);
-
-DELETE FROM affiliations 
+-- Step 4: Update rows where the title contains 'E‐mail:' or 'Electronic address:' to emptry string
+UPDATE affiliations 
+SET title = REGEXP_REPLACE(title, 'E‐mail:|Electronic address:', '', 'g')
 WHERE title ~ 'E‐mail:|Electronic address:';
 
 
--- Step 5: Update titles to remove email addresses, leading/trailing spaces, and special characters
+
+-- Step 5: Update titles to leading/trailing spaces, and special characters
 WITH cleaned AS (
     SELECT 
         id,
         title,
         regexp_replace(
             regexp_replace(
-                trim(both '\n' from trim(both ' ' from regexp_replace(title, '[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}', '', 'g'))), -- Remove email addresses and trim whitespace/newlines
-                '^[\.,\*\)\(;:\s]+|[\.,\*\)\(;:\s]+$', '' -- Remove leading/trailing special characters (., *, ), ;, :, and spaces)
+                trim(both '\n' from trim(both ' ' from title)), -- Trim whitespace/newlines
+                '^[\.,\*;:\s]+|[\.,\*;:\s]+$', '' -- Remove leading/trailing special characters ., *, ;, :, and spaces but keep parentheses
             ),
             '\s+', ' ', 'g' -- Normalize multiple spaces to a single space
         ) AS cleaned_title
