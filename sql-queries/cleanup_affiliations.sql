@@ -95,4 +95,10 @@ SET title = cleaned.cleaned_title
 FROM cleaned
 WHERE affiliations.id = cleaned.id;
 
+-- Step 6: Update titles to remove outer parentheses
+UPDATE affiliations
+SET title = REGEXP_REPLACE(title, '^\((.*)\)$', '\1')
+WHERE title ~ '^\(.*\)$';
+
+
 COMMIT;
