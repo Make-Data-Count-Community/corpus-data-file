@@ -13,7 +13,7 @@ load_dotenv(dotenv_path, override=True)
 conn_params = {
     'dbname': os.getenv('DB_NAME'),
     'user': os.getenv('DB_USER'),
-    'password': os.getenv('DB_PASSWORD'),
+    'password': os.getenv('PG_PASSWORD'),
     'host': os.getenv('DB_HOST'),
     'port': os.getenv('DB_PORT')
 }
@@ -32,44 +32,84 @@ def connect_db():
         print(f"Error connecting to the database: {e}")
         return None
 
-def delete_related_assertions(conn, repo_id, assertion_ids):
-    """
-    Deletes assertions and related records from the database.
-
-    :param conn: The database connection.
-    :param repo_id: The repository ID from the filename.
-    :param assertion_ids: A list of assertion IDs to delete.
-    """
+def delete_related_assertions(conn, repo_id, file_path):
     try:
         with conn.cursor() as cursor:
-            for i in range(0, len(assertion_ids), BATCH_SIZE):
-                ids_tuple = tuple(assertion_ids[i:i+BATCH_SIZE])
+            cursor.execute("BEGIN;")
+            
+            # Create a temporary table for assertion IDs
+            cursor.execute("CREATE TEMPORARY TABLE temp_assertions (id UUID PRIMARY KEY);")
+            
+            # Import data into the temporary table
+            with open(file_path, 'r') as f:
+                cursor.copy_expert(sql.SQL("COPY temp_assertions (id) FROM STDIN WITH CSV HEADER"), f)
+            
+            # Verify data in temp_assertions
+            check_temp_assertions_count(cursor)
 
-                print(f"Deleting {len(assertion_ids)} assertions and related records for repo_id {repo_id}")
+            # Get the total number of assertions before deletion
+            total_before = get_total_assertions(cursor)
+            print(f"Total assertions in repo_id {repo_id} before deletion: {total_before}")
 
-                cursor.execute(
-                    sql.SQL("DELETE FROM assertions_affiliations WHERE assertion_id IN %s"),
-                    [ids_tuple]
-                )
-                cursor.execute(
-                    sql.SQL("DELETE FROM assertions_funders WHERE assertion_id IN %s"),
-                    [ids_tuple]
-                )
-                cursor.execute(
-                    sql.SQL("DELETE FROM assertions_subjects WHERE assertion_id IN %s"),
-                    [ids_tuple]
-                )
+            # Perform deletions using JOIN
+            cursor.execute("""
+                DELETE FROM assertions_affiliations
+                USING temp_assertions
+                WHERE assertions_affiliations.assertion_id = temp_assertions.id;
+            """)
+            print("Deleted records from assertions_affiliations")
 
-                cursor.execute(
-                    sql.SQL("DELETE FROM assertions WHERE id IN %s"),
-                    [ids_tuple]
-                )
+            cursor.execute("""
+                DELETE FROM assertions_funders
+                USING temp_assertions
+                WHERE assertions_funders.assertion_id = temp_assertions.id;
+            """)
+            print("Deleted records from assertions_funders")
 
-                conn.commit()
-                print(f"Deleted {len(assertion_ids)} assertions and related records for repo_id {repo_id}")
+            cursor.execute("""
+                DELETE FROM assertions_subjects
+                USING temp_assertions
+                WHERE assertions_subjects.assertion_id = temp_assertions.id;
+            """)
+            print("Deleted records from assertions_subjects")
+
+            cursor.execute("""
+                DELETE FROM assertions
+                USING temp_assertions
+                WHERE assertions.id = temp_assertions.id;
+            """)
+            print("Deleted records from assertions")
+
+            conn.commit()
+            print(f"Successfully deleted records for repo_id {repo_id}")
+
+            # Verify remaining assertions
+            total_after = get_total_assertions(cursor)
+            print(f"Total assertions in repo_id {repo_id} after deletion: {total_after}")
+
+            cursor.execute("DROP TABLE IF EXISTS temp_assertions;")
+            conn.commit()
     except Exception as e:
         conn.rollback()
         print(f"Error deleting records for repo_id {repo_id}: {e}")
+
+def check_temp_assertions_count(cursor):
+    cursor.execute("SELECT COUNT(*) FROM temp_assertions;")
+    count = cursor.fetchone()[0]
+    print(f"Total records in temp_assertions: {count}")
+
+def check_csv_file(file_path):
+    df = pd.read_csv(file_path)
+    if df.empty:
+        print(f"Warning: {file_path} is empty.")
+    else:
+        print(f"{file_path} contains {len(df)} records.")
+
+def get_total_assertions(cursor):
+    cursor.execute("SELECT COUNT(*) FROM assertions;")
+    total = cursor.fetchone()[0]
+    return total
+
 
 def process_csv_files(directory):
     """
@@ -88,11 +128,8 @@ def process_csv_files(directory):
                 repo_id = re.split(r'-remove.*\.', filename)[0]
                 file_path = os.path.join(directory, filename)
 
-                df = pd.read_csv(file_path, header=None)
-
-                assertion_ids = df.iloc[:, 0].tolist()
-                print(f"Processing {len(assertion_ids)} assertions for repo_id {repo_id}")
-                delete_related_assertions(conn, repo_id, assertion_ids)
+                print(f"Processing {file_path} for repo_id {repo_id}")
+                delete_related_assertions(conn, repo_id, file_path)
     finally:
         conn.close()
 
