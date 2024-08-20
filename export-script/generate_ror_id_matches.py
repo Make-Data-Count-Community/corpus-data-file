@@ -6,6 +6,7 @@ import logging
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from dotenv import load_dotenv
+import urllib.parse
 
 # Setup logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -48,34 +49,27 @@ logging.info(f"Total organizations to process: {total_records}")
 # ROR API endpoint
 ROR_API_URL = "https://api.ror.org/organizations?affiliation="
 
+# Function to escape reserved characters for ElasticSearch
+def escape_reserved_chars(organization_name):
+    reserved_chars = ['+', '-', '=', '&&', '||', '!', '(', ')', '{', '}', '[', ']', '^', '"', '~', '*', '?', ':', '/', '\\']
+    for char in reserved_chars:
+        organization_name = organization_name.replace(char, '%5C' + urllib.parse.quote(char))
+    return organization_name
+
 # Function to query ROR API
 def query_ror_api(organization_name):
     try:
-        response = requests.get(ROR_API_URL + requests.utils.quote(organization_name))
-        response.raise_for_status()  # Raise an exception for HTTP errors
+        escaped_name = escape_reserved_chars(organization_name)
+        response = requests.get(ROR_API_URL + escaped_name)
         
-        # Check rate limit headers
-        rate_limit = response.headers.get('X-RateLimit-Limit')
-        rate_limit_remaining = response.headers.get('X-RateLimit-Remaining')
-        rate_limit_reset = response.headers.get('X-RateLimit-Reset')
-        
-        if rate_limit:
-            logging.info(f"Rate Limit: {rate_limit}")
-        if rate_limit_remaining:
-            logging.info(f"Rate Limit Remaining: {rate_limit_remaining}")
-        if rate_limit_reset:
-            logging.info(f"Rate Limit Reset: {rate_limit_reset}")
-        
-        if response.status_code == 200:
-            return response.json()['items']
-        elif response.status_code == 429:
-            # Handle rate limiting
-            wait_time = int(rate_limit_reset) - time.time()
-            logging.warning("Rate limit exceeded. Waiting before retrying...")
-            time.sleep(max(0, wait_time))
+        if response.status_code == 429:
+            logging.warning("Rate limit exceeded. Waiting for slightly more than 5 minutes before retrying...")
+            time.sleep(310)  # Slightly more than 5 minutes (300 seconds)
             return query_ror_api(organization_name)  # Retry after waiting
+        elif response.status_code == 200:
+            return response.json().get('items', [])
         else:
-            logging.error(f"Failed to query ROR API. Status code: {response.status_code}")
+            logging.error(f"Failed to query ROR API for organization '{organization_name}'. Status code: {response.status_code}")
             return []
     except requests.RequestException as e:
         logging.error(f"Request exception: {e}")
