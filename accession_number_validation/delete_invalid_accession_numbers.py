@@ -33,65 +33,79 @@ def connect_db():
         return None
 
 def delete_related_assertions(conn, repo_id, file_path):
-    try:
+    print(f"Deleting invalid assertions for repo {repo_id}")
+    #try:
+    with conn:
         with conn.cursor() as cursor:
-            cursor.execute("BEGIN;")
-            
             # Create a temporary table for assertion IDs
             cursor.execute("CREATE TEMPORARY TABLE temp_assertions (id UUID PRIMARY KEY);")
-            
-            # Import data into the temporary table
+
+            # Import data into the temporary tablex
             with open(file_path, 'r') as f:
                 cursor.copy_expert(sql.SQL("COPY temp_assertions (id) FROM STDIN WITH CSV HEADER"), f)
-            
+
             # Verify data in temp_assertions
             check_temp_assertions_count(cursor)
 
             # Get the total number of assertions before deletion
             total_before = get_total_assertions(cursor)
-            print(f"Total assertions in repo_id {repo_id} before deletion: {total_before}")
+    print(f"Total assertions in repo_id {repo_id} before deletion: {total_before}")
 
+    with conn:
+        with conn.cursor() as cursor:
             # Perform deletions using JOIN
             cursor.execute("""
                 DELETE FROM assertions_affiliations
                 USING temp_assertions
                 WHERE assertions_affiliations.assertion_id = temp_assertions.id;
             """)
-            print("Deleted records from assertions_affiliations")
+    print("Deleted records from assertions_affiliations")
 
+    with conn:
+        with conn.cursor() as cursor:
             cursor.execute("""
                 DELETE FROM assertions_funders
                 USING temp_assertions
                 WHERE assertions_funders.assertion_id = temp_assertions.id;
             """)
-            print("Deleted records from assertions_funders")
+    print("Deleted records from assertions_funders")
 
+    with conn:
+        with conn.cursor() as cursor:
             cursor.execute("""
                 DELETE FROM assertions_subjects
                 USING temp_assertions
                 WHERE assertions_subjects.assertion_id = temp_assertions.id;
             """)
-            print("Deleted records from assertions_subjects")
+    print("Deleted records from assertions_subjects")
 
-            cursor.execute("""
-                DELETE FROM assertions
-                USING temp_assertions
-                WHERE assertions.id = temp_assertions.id;
+    with conn:
+        with conn.cursor() as cursor:
+            # Create a temporary table for assertion IDs
+            cursor.execute("""CREATE TEMPORARY TABLE assertions_to_keep AS
+                SELECT * FROM assertions
+                WHERE id NOT IN (SELECT id from temp_assertions);
             """)
-            print("Deleted records from assertions")
+            cursor.execute("TRUNCATE TABLE assertions;")
+            cursor.execute("INSERT INTO assertions SELECT * FROM assertions_to_keep;")
 
-            conn.commit()
-            print(f"Successfully deleted records for repo_id {repo_id}")
+    print("Deleted records from assertions")
 
+    print(f"Successfully deleted records for repo_id {repo_id}")
+
+    with conn:
+        with conn.cursor() as cursor:
             # Verify remaining assertions
             total_after = get_total_assertions(cursor)
-            print(f"Total assertions in repo_id {repo_id} after deletion: {total_after}")
+    print(f"Total assertions in repo_id {repo_id} after deletion: {total_after}")
 
+    with conn:
+        with conn.cursor() as cursor:
             cursor.execute("DROP TABLE IF EXISTS temp_assertions;")
-            conn.commit()
-    except Exception as e:
-        conn.rollback()
-        print(f"Error deleting records for repo_id {repo_id}: {e}")
+            cursor.execute("DROP TABLE IF EXISTS assertions_to_keep;")
+    #except Exception as e:
+    #    conn.rollback()
+    #    print(f"Error deleting records for repo_id {repo_id}: {e}")
 
 def check_temp_assertions_count(cursor):
     cursor.execute("SELECT COUNT(*) FROM temp_assertions;")
