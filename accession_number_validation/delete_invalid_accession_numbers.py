@@ -92,24 +92,8 @@ def process_csv_files(directory):
                 print(f"Total assertions - {len(assertion_ids)}")
 
         if assertion_ids:
-            with conn.cursor() as cursor:
-                cursor.execute(
-                    sql.SQL("SELECT COUNT(*) FROM assertions WHERE id IN %s;"),
-                    [tuple(assertion_ids)]
-                )
-                print(f"Count of records in assertions_temp after exclusion: {cursor.fetchone()[0]}")
-                cursor.execute(
-                    sql.SQL("SELECT id FROM assertions WHERE id IN %s;"),
-                    [tuple(assertion_ids)]
-                )
-                ids_in_assertions = set(row[0] for row in cursor.fetchall())
-                ids_set = set(assertion_ids)
-
-                difference = ids_set - ids_in_assertions
-                print(f"IDs in assertion_ids but not in assertions: {len(difference)}")
-                print(f"Sample of missing IDs: {list(difference)[:100]}")
             print(f"Processing {len(assertion_ids)} assertion IDs...")
-            # delete_related_assertions(conn, assertion_ids)
+            delete_related_assertions(conn, assertion_ids)
         else:
             print("No assertion IDs found in the specified directory.")
 
