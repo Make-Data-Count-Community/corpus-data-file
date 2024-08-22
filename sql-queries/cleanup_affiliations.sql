@@ -100,5 +100,15 @@ UPDATE affiliations
 SET title = REGEXP_REPLACE(title, '^\((.*)\)$', '\1')
 WHERE title ~ '^\(.*\)$';
 
+-- Step 7: Update titles to leading/trailing spaces, and special characters
 
+UPDATE funders
+SET title = regexp_replace(
+                regexp_replace(
+                    trim(both '\n' from trim(both ' ' from title)), 
+                    '^[\.,\*;:\s]+|[\.,\*;:\s]+$', '' -- Remove leading/trailing ., *, ;, :, and spaces
+                ),
+                '\s+', ' ', 'g' -- Normalize multiple spaces to a single space
+            )
+WHERE title ~ '[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}';
 COMMIT;
