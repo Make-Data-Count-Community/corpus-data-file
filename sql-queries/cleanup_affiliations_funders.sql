@@ -111,5 +111,6 @@ SET title = regexp_replace(
                 ),
                 '\s+', ' ', 'g' -- Normalize multiple spaces to a single space
             )
-WHERE title ~ '[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}';
+WHERE title ~ '[\.,\*;:\s]+$|^[\.,\*;:\s]+';
+
 COMMIT;
