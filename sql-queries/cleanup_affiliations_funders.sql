@@ -124,6 +124,30 @@ UPDATE affiliations
 SET title = REGEXP_REPLACE(title, '^\((.*)\)$', '\1')
 WHERE title ~ '^\(.*\)$';
 
+-- Step 8: Remove leading special chars
+
+WITH cleaned AS (
+    SELECT 
+        id,
+        title,
+        regexp_replace(
+            regexp_replace(
+                title, 
+                '^[\.,\*;:\s]+', '' -- Remove leading special characters ., *, ;, :, and spaces
+            ),
+            '\s+', ' ', 'g' -- Normalize multiple spaces to a single space
+        ) AS cleaned_title
+    FROM 
+        affiliations
+    WHERE 
+        title ~ '^[\.,\*;:\s]+' -- Only target titles with leading special characters
+)
+UPDATE affiliations
+SET title = cleaned.cleaned_title
+FROM cleaned
+WHERE affiliations.id = cleaned.id;
+
+
 -- # Funders
 -- Step 8: Update titles to leading/trailing spaces, and special characters
 
