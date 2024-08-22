@@ -24,7 +24,7 @@ def connect_db():
     """Establishes a connection to the database."""
     try:
         conn = psycopg2.connect(**conn_params)
-        conn.autocommit = False  # Ensure manual control over commits
+        conn.autocommit = False
         return conn
     except psycopg2.DatabaseError as e:
         print(f"Error connecting to the database: {e}")
@@ -98,7 +98,7 @@ def process_csv_files(directory):
             print("No assertion IDs found in the specified directory.")
 
     finally:
-        conn.close()  # Ensure the connection is closed
+        conn.close()
         print("Database connection closed.")
 
 process_csv_files(csv_directory)
