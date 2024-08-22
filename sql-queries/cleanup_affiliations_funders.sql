@@ -103,14 +103,22 @@ WHERE title ~ '^\(.*\)$';
 -- # Funders
 -- Step 7: Update titles to leading/trailing spaces, and special characters
 
+WITH cleaned AS (
+    SELECT id, title, 
+        regexp_replace(
+            regexp_replace(
+                trim(both '\n' from trim(both ' ' from title)), 
+                '^[\.,\*;:\s]+|[\.,\*;:\s]+$', '' -- Remove leading/trailing ., *, ;, :, and spaces
+            ),
+            '\s+', ' ', 'g' -- Normalize multiple spaces to a single space
+        ) AS cleaned_title
+    FROM funders
+    WHERE title ~ '[\.,\*;:\s]+$|^[\.,\*;:\s]+'
+)
 UPDATE funders
-SET title = regexp_replace(
-                regexp_replace(
-                    trim(both '\n' from trim(both ' ' from title)), 
-                    '^[\.,\*;:\s]+|[\.,\*;:\s]+$', '' -- Remove leading/trailing ., *, ;, :, and spaces
-                ),
-                '\s+', ' ', 'g' -- Normalize multiple spaces to a single space
-            )
-WHERE title ~ '[\.,\*;:\s]+$|^[\.,\*;:\s]+';
+SET title = cleaned.cleaned_title
+FROM cleaned
+WHERE funders.id = cleaned.id;
+
 
 COMMIT;
