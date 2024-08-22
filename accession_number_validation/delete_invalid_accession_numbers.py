@@ -87,9 +87,7 @@ def process_csv_files(directory):
                 df = pd.read_csv(file_path, header=None)
 
                 file_assertion_ids = df.iloc[:, 0].tolist()
-                print(f"{repo_id} - {len(file_assertion_ids)} assertions")
                 assertion_ids.extend(file_assertion_ids)
-                print(f"Total assertions - {len(assertion_ids)}")
 
         if assertion_ids:
             print(f"Processing {len(assertion_ids)} assertion IDs...")
