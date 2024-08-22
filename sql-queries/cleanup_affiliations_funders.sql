@@ -149,7 +149,7 @@ WHERE affiliations.id = cleaned.id;
 
 
 -- # Funders
--- Step 8: Update titles to leading/trailing spaces, and special characters
+-- Step 9: Update titles to leading/trailing spaces, and special characters
 
 WITH cleaned AS (
     SELECT id, title, 
@@ -168,5 +168,26 @@ SET title = cleaned.cleaned_title
 FROM cleaned
 WHERE funders.id = cleaned.id;
 
+-- Step 10: Remove trailing special characters including dots.
+WITH cleaned AS (
+    SELECT 
+        id,
+        title,
+        regexp_replace(
+            regexp_replace(
+                trim(both '\n' from trim(both ' ' from title)), -- Trim whitespace/newlines
+                '[\.,\*;:\s]+$', '' -- Remove trailing special characters ., *, ;, :, and spaces
+            ),
+            '\s+', ' ', 'g' -- Normalize multiple spaces to a single space
+        ) AS cleaned_title
+    FROM 
+        funders
+    WHERE 
+        title ~ '[\.,\*;:\s]+$' -- Only target titles with trailing special characters
+)
+UPDATE funders
+SET title = cleaned.cleaned_title
+FROM cleaned
+WHERE funders.id = cleaned.id;
 
 COMMIT;
