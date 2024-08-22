@@ -119,13 +119,13 @@ FROM cleaned
 WHERE affiliations.id = cleaned.id;
 
 
--- Step 6: Update titles to remove outer parentheses
+-- Step 7: Update titles to remove outer parentheses
 UPDATE affiliations
 SET title = REGEXP_REPLACE(title, '^\((.*)\)$', '\1')
 WHERE title ~ '^\(.*\)$';
 
 -- # Funders
--- Step 7: Update titles to leading/trailing spaces, and special characters
+-- Step 8: Update titles to leading/trailing spaces, and special characters
 
 WITH cleaned AS (
     SELECT id, title, 
