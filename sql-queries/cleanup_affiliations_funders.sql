@@ -100,6 +100,7 @@ UPDATE affiliations
 SET title = REGEXP_REPLACE(title, '^\((.*)\)$', '\1')
 WHERE title ~ '^\(.*\)$';
 
+-- # Funders
 -- Step 7: Update titles to leading/trailing spaces, and special characters
 
 UPDATE funders
