@@ -11,7 +11,7 @@ def get_all_data(json_file, output_dir):
       writer = csv.writer(f_out)
       writer.writerow(
         ['id', 'created', 'updated', 'repository', 'publisher', 'journal', 'title',
-         'objId', 'subjId', 'publishedDate', 'accessionNumber', 'doi', 'relationTypeId',
+         'dataset', 'publication', 'publishedDate',
          'source', 'subjects', 'affiliations', 'funders'
         ]
       )
@@ -23,12 +23,9 @@ def get_all_data(json_file, output_dir):
         created = record['created']
         updated = record['updated']
         title = record['title']
-        objId = record['objId']
-        subjId = record['subjId']
+        dataset = record['dataset']
+        publication = record['publication']
         publishedDate = record.get('publishedDate', '')
-        accessionNumber = record.get('accessionNumber', '')
-        doi = record.get('doi', '')
-        relationTypeId = record.get('relationTypeId', '')
         source = record.get('source', '')
 
         # Repository
@@ -60,7 +57,7 @@ def get_all_data(json_file, output_dir):
 
         with open(outfile, 'a', newline='', encoding='utf-8') as f_out:
             writer = csv.writer(f_out)
-            writer.writerow([id, created, updated, repository, publisher, journal, title, objId, subjId, publishedDate, accessionNumber, doi, relationTypeId, source, subjects, affiliations, funders])
+            writer.writerow([id, created, updated, repository, publisher, journal, title, dataset, publication, publishedDate, source, subjects, affiliations, funders])
 
 if __name__ == '__main__':
     if len(sys.argv) != 3:
