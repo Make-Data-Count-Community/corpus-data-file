@@ -24,12 +24,9 @@ case
     else '{}'::json
 end journal,
 a.title,
-a.obj_id as "objId",
-a.subj_id as "subjId",
+a.dataset,
+a.publication,
 a.published_date as "publishedDate",
-a.accession_number as "accessionNumber",
-a.doi,
-a.relation_type_id as "relationTypeId",
 s.abbreviation as source
 from assertions as a
 left join repositories as r
