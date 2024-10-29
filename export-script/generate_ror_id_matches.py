@@ -20,7 +20,7 @@ load_dotenv(dotenv_path, override=True)
 conn_params = {
     'dbname': os.getenv('DB_NAME'),
     'user': os.getenv('DB_USER'),
-    'password': os.getenv('PG_PASSWORD'),
+    'password': os.getenv('DB_PASSWORD'),
     'host': os.getenv('DB_HOST'),
     'port': os.getenv('DB_PORT')
 }
@@ -95,9 +95,9 @@ logging.info(f"Creating CSV report file: {output_file}")
 with open(output_file, mode='w', newline='') as file:
     writer = csv.writer(file)
     # Write CSV header
-    writer.writerow(["Original Name", "Match 1 Name", "Match 1 ID", "Match 1 Score" "Match 1 Chosen",
+    writer.writerow(["Original Name", "Match 1 Name", "Match 1 ID", "Match 1 Score", "Match 1 Chosen",
                      "Match 2 Name", "Match 2 ID", "Match 2 Score", "Match 2 Chosen",
-                     "Match 3 Name", "Match 3 ID", "Match 3 Score", "Match 3 Chosen",])
+                     "Match 3 Name", "Match 3 ID", "Match 3 Score", "Match 3 Chosen"])
     
     # Use ThreadPoolExecutor to process organizations concurrently
     with ThreadPoolExecutor(max_workers=10) as executor:
