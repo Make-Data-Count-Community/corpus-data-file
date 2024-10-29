@@ -23,7 +23,7 @@ def check_if_dois_same(stm_cited_dois, datacite_cited_dois):
         for s in stm_cited_dois:
             in_datacite = False
             for d in datacite_cited_dois:
-                if s in d.strip('https://doi.org/'):
+                if s.lower() in d.lower().strip('https://doi.org/'):
                     in_datacite = True
             if in_datacite == False:
                 stm_not_in_datacite.append(s)
@@ -32,7 +32,7 @@ def check_if_dois_same(stm_cited_dois, datacite_cited_dois):
         for d in datacite_cited_dois:
             in_stm = False
             for s in stm_cited_dois:
-                if d.strip('https://doi.org/') in s:
+                if d.lower().strip('https://doi.org/') in s.lower():
                     in_stm = True
             if in_stm == False:
                 datacite_not_in_stm.append(s)
@@ -41,14 +41,18 @@ def check_if_dois_same(stm_cited_dois, datacite_cited_dois):
         return True
 
 def get_citation_events(article_doi, filter_param):
+    if filter_param == 'subj-id':
+        opposite_param = 'obj-id'
+    else:
+        opposite_param = 'subj-id'
     cited_dois = []
     params = {filter_param: article_doi}
     response = requests.get(EVENT_DATA_API_URL, params=params)
     response_json = response.json()
     for event in response_json['data']:
         if event['attributes']['relation-type-id'] in CITATION_REL_TYPES:
-            if event['attributes']['obj-id'] not in cited_dois:
-                cited_dois.append(event['attributes']['obj-id'])
+            if event['attributes'][opposite_param] not in cited_dois:
+                cited_dois.append(event['attributes'][opposite_param])
     return cited_dois
 
 def parse_csv(input_file):
