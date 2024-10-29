@@ -81,8 +81,8 @@ def process_organization(org_id_name):
     matches = query_ror_api(org_name)
     row = [org_name]
     
-    for match in matches[:5]:  # Limit to 5 matches
-        row.extend([match['organization']['name'], match['organization']['id'], match['score']])
+    for match in matches[:3]:  # Limit to 5 matches
+        row.extend([match['organization']['name'], match['organization']['id'], match['score'], match['chosen']])
     
     # Fill in the rest of the row if fewer than 5 matches
     row.extend([""] * (15 - len(row)))  # 15 = 3 fields per match * 5 matches + 1 original name
@@ -95,11 +95,9 @@ logging.info(f"Creating CSV report file: {output_file}")
 with open(output_file, mode='w', newline='') as file:
     writer = csv.writer(file)
     # Write CSV header
-    writer.writerow(["Original Name", "Match 1 Name", "Match 1 ID", "Match 1 Score",
-                     "Match 2 Name", "Match 2 ID", "Match 2 Score",
-                     "Match 3 Name", "Match 3 ID", "Match 3 Score",
-                     "Match 4 Name", "Match 4 ID", "Match 4 Score",
-                     "Match 5 Name", "Match 5 ID", "Match 5 Score"])
+    writer.writerow(["Original Name", "Match 1 Name", "Match 1 ID", "Match 1 Score" "Match 1 Chosen",
+                     "Match 2 Name", "Match 2 ID", "Match 2 Score", "Match 2 Chosen",
+                     "Match 3 Name", "Match 3 ID", "Match 3 Score", "Match 3 Chosen",])
     
     # Use ThreadPoolExecutor to process organizations concurrently
     with ThreadPoolExecutor(max_workers=10) as executor:
