@@ -2,7 +2,6 @@ import os
 import time
 import psycopg2
 import requests
-import pandas as pd
 import re
 import time
 from dotenv import load_dotenv
