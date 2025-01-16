@@ -4,6 +4,7 @@ import psycopg2
 import requests
 import re
 import time
+from psycopg2 import extras
 from dotenv import load_dotenv
 
 project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -21,7 +22,7 @@ conn_params = {
 
 AFFILIATIONS_TABLE = "affiliations"
 FUNDERS_TABLE = "funders"
-ROR_API_BASE_URL = "https://api.ror.org/organizations"
+ROR_API_BASE_URL = os.getenv('ROR_API_BASE_URL')
 
 INVALID_EXTERNAL_IDS = {
     AFFILIATIONS_TABLE: ["N/A", "null"],
@@ -113,21 +114,31 @@ def fetch_ror_by_id(ror_id):
 
 def fetch_ror_by_title(title):
     """Fetch ROR name by its ID."""
-    response = requests.get(f"{ROR_API_BASE_URL}/organizations?affiliation={title}")
+    response = requests.get(f"{ROR_API_BASE_URL}?affiliation={title}")
     if response.status_code == 200:
         data = response.json()
-        return data.get("id"), data.get("name")
+        matching_item = next(
+                (item for item in data.get('items', [])
+                    if int(item.get('score')) == 1 and item.get('chosen', False)),
+                None
+            )
+        if matching_item:
+            return matching_item.get("organization").get("id"), matching_item.get("organization").get("name")
+        return None, None
     return None, None
     
 
 def process_table(cursor, table_name):
     """Core logic to clean, normalize, and populate ROR data in a table."""
-    cursor.execute(f"SELECT id, external_id, title FROM {table_name} where ror_id IS NULL AND ror_name IS NULL LIMIT 100;")
+    cursor.execute(f"SELECT id, external_id, title FROM {table_name} where ror_id IS NULL AND ror_name IS NULL;")
     rows = cursor.fetchall()
     print(f"Number of rows fetched: {len(rows)}")
     
-    count = 1
-    for row in rows:
+    batch_updates = []
+    batch_size = 5000
+    total_processed = 0
+
+    for count, row in enumerate(rows, start=1):
         record_id, external_id, title = row
         ror_id, ror_name = None, None
 
@@ -137,37 +148,81 @@ def process_table(cursor, table_name):
             if external_id.startswith("https://ror.org/"):
                 ror_id, ror_name = fetch_ror_by_id(external_id)
             else:
-                ror_id, ror_name = fetch_ror_by_query(f'"{external_id}"')
+                ror_id, ror_name = fetch_ror_by_query(external_id)
         else:
-            ror_id, ror_name = fetch_ror_by_title(f'"{title}"')
+            ror_id, ror_name = fetch_ror_by_title(title)
 
-        cursor.execute(f"""
-            UPDATE {table_name}
-            SET external_id = %s, ror_id = %s, ror_name = %s
-            WHERE id = %s;
-        """, (external_id, ror_id, ror_name, record_id))
+        batch_updates.append((external_id, ror_id, ror_name, record_id))
+
         print(f"Processed record {count}/{len(rows)}")
-        count += 1
-        time.sleep(2)
-        
+
+        if count % batch_size == 0:
+            execute_batch_update(cursor, table_name, batch_updates)
+            total_processed += len(batch_updates)
+            print(f"Processed {total_processed}/{len(rows)} records")
+            batch_updates.clear()
+    
+    if batch_updates:
+        execute_batch_update(cursor, table_name, batch_updates)
+        total_processed += len(batch_updates)
+        print(f"Processed {total_processed}/{len(rows)} records")
+        batch_updates.clear()
+
+    print(f"Processing {table_name} complete.")
+
+
+def execute_batch_update(cursor, table_name, updates):
+    """Execute a batch update for the given updates."""
+    query = f"""
+        UPDATE {table_name}
+        SET external_id = data.external_id,
+            ror_id = data.ror_id,
+            ror_name = data.ror_name
+        FROM (VALUES %s) AS data(external_id, ror_id, ror_name, id)
+        WHERE {table_name}.id = data.id::uuid;
+    """
+    extras.execute_values(
+        cursor,
+        query,
+        updates,
+        template="(%s, %s, %s, %s)",
+    )
+
 
 def process_by_titles(cursor, table_name):
     """Process the remaining records where we could not get ROR data by external ID."""
     cursor.execute(f"SELECT id, external_id, title FROM {table_name} where external_id IS NOT NULL AND ror_id IS NULL;")
     rows = cursor.fetchall()
 
-    for row in rows:
-        record_id, title = row
+    batch_updates = []
+    batch_size = 5000
+    total_processed = 0
+
+    for count, row in enumerate(rows, start=1):
+        record_id, external_id, title = row
         ror_id, ror_name = None, None
 
-        ror_id, ror_name = fetch_ror_by_title(f'"{title}"')
+        ror_id, ror_name = fetch_ror_by_title(title)
 
-        if ror_id and ror_name:
-            cursor.execute(f"""
-				UPDATE {table_name}
-				SET ror_id = %s, ror_name = %s
-				WHERE id = %s;
-			""", (ror_id, ror_name, record_id))
+        batch_updates.append((external_id, ror_id, ror_name, record_id))
+
+        print(f"Processed record {count}/{len(rows)}")
+
+        if count % batch_size == 0:
+            execute_batch_update(cursor, table_name, batch_updates)
+            total_processed += len(batch_updates)
+            print(f"Processed {total_processed}/{len(rows)} records")
+            batch_updates.clear()
+
+        time.sleep(1)
+    
+    if batch_updates:
+        execute_batch_update(cursor, table_name, batch_updates)
+        total_processed += len(batch_updates)
+        print(f"Processed {total_processed}/{len(rows)} records")
+        batch_updates.clear()
+
+    print(f"Processing {table_name} complete.")
         
 
 def main():
@@ -180,7 +235,7 @@ def main():
             add_columns_if_not_exist(cursor, table_name)
             clean_invalid_external_ids(cursor, table_name, INVALID_EXTERNAL_IDS[table_name])
             process_table(cursor, table_name)
-            # process_by_titles(cursor, table_name)
+            process_by_titles(cursor, table_name)
             conn.commit()
         print("Processing completed successfully.")
     except Exception as e:
