@@ -3,7 +3,6 @@ import time
 import psycopg2
 import requests
 import re
-import time
 from psycopg2 import extras
 from dotenv import load_dotenv
 
