@@ -34,6 +34,8 @@ def normalize_dois(doi):
         return f"https://{doi}"
     elif doi.startswith("10."):
         return f"https://doi.org/{doi}"
+    elif doi.startswith("//"):
+        return f"https:{doi}"
     else:
         return doi
 
