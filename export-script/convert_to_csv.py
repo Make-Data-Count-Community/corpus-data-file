@@ -3,6 +3,12 @@ import csv
 import sys
 import os
 
+
+def get_ror_info(org):
+    ror_name = org.get('ror_name', 'NONE')
+    ror_id = org.get('ror_id', 'NONE')
+    return f"{ror_name} {ror_id}".strip()
+
 def get_all_data(json_file, output_dir):
     base_filename = os.path.splitext(os.path.basename(json_file))[0]
     outfile = os.path.join(output_dir, f"{base_filename}.csv")
@@ -12,7 +18,7 @@ def get_all_data(json_file, output_dir):
       writer.writerow(
         ['id', 'created', 'updated', 'repository', 'publisher', 'journal', 'title',
          'dataset', 'publication', 'publishedDate',
-         'source', 'subjects', 'affiliations', 'funders'
+         'source', 'subjects', 'affiliations', 'affiliationsROR', 'funders', 'fundersROR'
         ]
       )
     with open(json_file, 'r', encoding='utf-8') as f_in:
@@ -51,13 +57,15 @@ def get_all_data(json_file, output_dir):
 
         # Affiliations
         affiliations = '; '.join([f"{aff['title']}{' ' + aff['external_id'] if aff.get('external_id') else ''}" for aff in record.get('affiliations', [])])
+        affiliationsROR = '; '.join([get_ror_info(aff) for aff in record.get('affiliations', [])])
 
         # Funders
         funders = '; '.join([f"{funder['title']}{' ' + funder['external_id'] if funder.get('external_id') else ''}" for funder in record.get('funders', [])])
+        fundersROR = '; '.join([get_ror_info(funder) for funder in record.get('funders', [])])
 
         with open(outfile, 'a', newline='', encoding='utf-8') as f_out:
             writer = csv.writer(f_out)
-            writer.writerow([id, created, updated, repository, publisher, journal, title, dataset, publication, publishedDate, source, subjects, affiliations, funders])
+            writer.writerow([id, created, updated, repository, publisher, journal, title, dataset, publication, publishedDate, source, subjects, affiliations, affiliationsROR, funders, fundersROR])
 
 if __name__ == '__main__':
     if len(sys.argv) != 3:
