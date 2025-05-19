@@ -53,7 +53,7 @@ ALTER TABLE assertion_details_formatted add column affiliations json;
 ALTER TABLE assertion_details_formatted ALTER COLUMN affiliations set DEFAULT '[]'::json;
 CREATE TEMPORARY TABLE grouped_affiliations AS
     SELECT a.id,
-    coalesce(json_agg(json_build_object('title', aff.title, 'external_id', aff.external_id)) filter (where aff.title is not null or aff.external_id is not null), '[]'::json) as affiliations
+    coalesce(json_agg(json_build_object('title', aff.title, 'external_id', aff.external_id, 'ror_name', aff.ror_name, 'ror_id', aff.ror_id)) filter (where aff.title is not null or aff.external_id is not null), '[]'::json) as affiliations
     FROM assertions a
     join assertions_affiliations aa
     on a.id = aa.assertion_id
@@ -71,7 +71,7 @@ ALTER TABLE assertion_details_formatted add column funders json;
 ALTER TABLE assertion_details_formatted ALTER COLUMN funders set DEFAULT '[]'::json;
 CREATE TEMPORARY TABLE grouped_funders AS
     SELECT a.id,
-    coalesce(json_agg(json_build_object('title', f.title, 'external_id', f.external_id)) filter (where f.title is not null or f.external_id is not null), '[]'::json) as funders
+    coalesce(json_agg(json_build_object('title', f.title, 'external_id', f.external_id, 'ror_name', f.ror_name, 'ror_id', f.ror_id)) filter (where f.title is not null or f.external_id is not null), '[]'::json) as funders
     FROM assertions a
     join assertions_funders af
     on a.id = af.assertion_id

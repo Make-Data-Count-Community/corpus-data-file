@@ -24,15 +24,15 @@ fi
 
 QUERY_PREFIX="SELECT json_agg(t) FROM (SELECT * FROM assertion_details_formatted ORDER BY id OFFSET "
 QUERY_SUFFIX=" LIMIT 1000000) t;"
-MAIN_OUTPUT_DIR="$SCRIPT_PARENT_DIR/data-citation-corpus-v2.0-output"
+MAIN_OUTPUT_DIR="$SCRIPT_PARENT_DIR/data-citation-corpus-v3.0-output"
 JSON_OUTPUT_DIR="$MAIN_OUTPUT_DIR/json"
 CSV_OUTPUT_DIR="$MAIN_OUTPUT_DIR/csv"
 CURRENT_DATE=$(date +%Y-%m-%d)
 CHUNK_SIZE=1000000
 TOTAL_RECORDS=$(PGPASSWORD="$DB_PASSWORD" psql -h "$DB_HOST" -U "$DB_USER" -d "$DB_NAME" -tA -c "SELECT COUNT(*) FROM assertion_details_formatted;")
 FILE_NUMBER=0
-JSON_ZIP_FILENAME="${CURRENT_DATE}-data-citation-corpus-v2.0-json.zip"
-CSV_ZIP_FILENAME="${CURRENT_DATE}-data-citation-corpus-v2.0-csv.zip"
+JSON_ZIP_FILENAME="${CURRENT_DATE}-data-citation-corpus-v3.0-json.zip"
+CSV_ZIP_FILENAME="${CURRENT_DATE}-data-citation-corpus-v3.0-csv.zip"
 PYTHON_SCRIPT="$SCRIPT_PARENT_DIR/export-script/convert_to_csv.py"
 
 # Check if there was an error with psql connection
@@ -52,7 +52,7 @@ function run_query_and_save_json() {
     local offset=$1
     local file_number_padded=$(printf "%02d" "$FILE_NUMBER")
     echo "Processing chunk starting from $offset"
-    local output_file="$JSON_OUTPUT_DIR/${CURRENT_DATE}-data-citation-corpus-${file_number_padded}-v2.0.json"
+    local output_file="$JSON_OUTPUT_DIR/${CURRENT_DATE}-data-citation-corpus-${file_number_padded}-v3.0.json"
     local query="$QUERY_PREFIX$offset$QUERY_SUFFIX"
     local start_time=$(date +%s)
     PGPASSWORD="$DB_PASSWORD" psql -h "$DB_HOST" -U "$DB_USER" -d "$DB_NAME" -tA -c "SET CLIENT_ENCODING TO 'UTF8'; $query" -o "$output_file"
