@@ -5,3 +5,6 @@ data-citation-corpus-v1.1-output/**
 accession_number_validation/**env
 
 accession_number_validation/accession_number_validation_data
+
+corpus-v4/europepmc_raw_data
+corpus-v4/europepmc_processed_data
