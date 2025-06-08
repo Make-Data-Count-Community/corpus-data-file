@@ -1,7 +1,11 @@
 #!/bin/bash
 
 # Create directory
-mkdir -p europepmc_raw_data
+if [ ! -d "europepmc_raw_data" ]; then
+    echo "Creating directory europepmc_raw_data..."
+    mkdir europepmc_raw_data
+fi
+
 cd europepmc_raw_data
 
 excluded_files=("cellosaurus.csv" "chebi.csv" "ebisc.csv" "eudract.csv" "hipsci.csv" "nct.csv" "omim.csv" "rrid.csv")
