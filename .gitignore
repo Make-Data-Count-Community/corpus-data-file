@@ -7,5 +7,5 @@ accession_number_validation/**env
 
 accession_number_validation/accession_number_validation_data
 
-corpus-v4/europepmc_raw_data
-corpus-v4/europepmc_processed_data
+corpus-v4/data_ingestion/europepmc_raw_data
+corpus-v4/data_ingestion/europepmc_processed_data
