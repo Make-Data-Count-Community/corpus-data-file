@@ -71,7 +71,10 @@ repository_subject_mapping = {
     '54753603-c263-4cc0-bd65-57c39b5a20f6': ['biological sciences', 'basic medicine'],
     'e5960008-7a81-46b1-b526-d7dbea7e2c93': ['biological sciences', 'basic medicine'],
     '87646104-e5ef-494b-b2f3-a46c9572e003': ['biological sciences', 'basic medicine', 'physical sciences', 'chemical sciences'],
-    'd3ee57d1-bce4-437d-b054-e686d9abc727': ['basic medicine', 'chemical sciences', 'biological sciences']
+    'd3ee57d1-bce4-437d-b054-e686d9abc727': ['basic medicine', 'chemical sciences', 'biological sciences'],
+    '509bf805-f2a6-4758-94e4-ca28f49b7b54': ['biological sciences'],
+    '04c26ce0-5583-4dbc-98f0-465ab046bf1c': ['biological sciences', 'basic medicine'],
+    'f99f9396-1377-4423-8165-6731ba593ddf': ['biological sciences', 'basic medicine']
 }
 
 def get_connection():
