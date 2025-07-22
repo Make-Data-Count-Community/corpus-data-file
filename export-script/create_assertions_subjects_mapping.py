@@ -204,9 +204,9 @@ def process_repository(repo_id, subject_ids):
         insert_batch(batch)
 
 def main():
-    add_unique_constraint()
-    insert_missing_subjects()
-    lowercase_subject_titles()
+    # add_unique_constraint()
+    # insert_missing_subjects()
+    # lowercase_subject_titles()
 
     for repository, subjects in repository_subject_mapping.items():
         subject_ids = fetch_subject_ids(subjects)
