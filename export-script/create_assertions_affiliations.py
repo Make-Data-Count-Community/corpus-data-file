@@ -22,7 +22,7 @@ conn_params = {
     'port': os.getenv('DB_PORT'),
 }
 
-CSV_PATH = os.path.join(os.path.expanduser("~"), "Downloads", "ror_id_candidate_matches_merged_local.csv")
+CSV_PATH = os.path.join(os.path.expanduser("~"), "Downloads", "exactly_one_true_affiliations.csv")
 
 # --- Helpers ---
 def is_uuid(val):
