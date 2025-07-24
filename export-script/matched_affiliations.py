@@ -1,35 +1,51 @@
 import os
 import pandas as pd
 
-# Step 1: Load the file
+# --- Step 1: Load the file ---
 downloads_path = os.path.join(os.path.expanduser("~"), "Downloads")
 file_path = os.path.join(downloads_path, "ror_id_candidate_matches_merged_local.csv")
 
-df = pd.read_csv(file_path)
+df = pd.read_csv(
+    file_path,
+    sep=",",
+    quotechar='"',
+    skipinitialspace=True,
+    dtype=str,
+    keep_default_na=False,
+    na_values=[""],
+    index_col=False  # ⛔ Ensures 'Dataset' doesn't become the index
+)
+df.columns = df.columns.str.strip()
 
-# Helper functions
-def is_true(val):
-    return str(val).strip().upper() == 'TRUE'
+# --- Step 2: Helper functions ---
+def count_true_matches(row):
+    return sum(
+        str(row.get(f"Match {i} Chosen", "")).strip().upper() == "TRUE"
+        for i in range(1, 4)
+    )
 
-def is_false(val):
-    return str(val).strip().upper() == 'FALSE'
+def is_all_false(row):
+    return all(
+        str(row.get(f"Match {i} Chosen", "")).strip().upper() == "FALSE"
+        for i in range(1, 4)
+    )
 
-# Step 2: Create masks
-all_true_mask = df.apply(lambda row: all(is_true(row.get(f'Match {i} Chosen', '')) for i in range(1, 4)), axis=1)
-all_false_mask = df.apply(lambda row: all(is_false(row.get(f'Match {i} Chosen', '')) for i in range(1, 4)), axis=1)
+# --- Step 3: Apply ---
+df["num_true"] = df.apply(count_true_matches, axis=1)
+df["all_false"] = df.apply(is_all_false, axis=1)
 
-# Step 3: Split into categories
-all_true = df[all_true_mask]
-all_false = df[all_false_mask]
-not_all_true = df[~all_true_mask]  # Anything that's not all true (includes all_false + partial_true)
+# --- Step 4: Filter ---
+exactly_one_true = df[df["num_true"] == 1]
+all_false = df[df["all_false"] == True]
+more_than_one_true = df[df["num_true"] > 1]
 
-# Step 4: Export
-all_true.to_csv('all_true_affiliations.csv', index=False)
-all_false.to_csv('all_false_affiliations.csv', index=False)
-not_all_true.to_csv('not_all_true_affiliations.csv', index=False)
+# --- Step 5: Export ---
+exactly_one_true.to_csv("exactly_one_true_affiliations.csv", index=False)
+all_false.to_csv("all_false_affiliations.csv", index=False)
+more_than_one_true.to_csv("more_than_one_true_affiliations.csv", index=False)
 
-# Step 5: Summary
+# --- Step 6: Summary ---
 print(f"📄 Total rows: {len(df)}")
-print(f"✅ All TRUE rows: {len(all_true)}")
+print(f"✅ Exactly ONE TRUE rows: {len(exactly_one_true)}")
 print(f"❌ All FALSE rows: {len(all_false)}")
-print(f"🤷 Not ALL TRUE rows: {len(not_all_true)}")
+print(f"⚠️ More than ONE TRUE rows: {len(more_than_one_true)}")
