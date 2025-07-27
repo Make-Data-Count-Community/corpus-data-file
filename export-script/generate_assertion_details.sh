@@ -24,7 +24,7 @@ fi
 
 QUERY_PREFIX="SELECT json_agg(t) FROM (SELECT * FROM assertion_details_formatted ORDER BY id OFFSET "
 QUERY_SUFFIX=" LIMIT 1000000) t;"
-MAIN_OUTPUT_DIR="/Volumes/Storage/data-citation-corpus-v4.0-output"
+MAIN_OUTPUT_DIR="/Volumes/Storage/data-citation-corpus-v4.0-output" # TODO: Change this to your desired output directory
 JSON_OUTPUT_DIR="$MAIN_OUTPUT_DIR/json"
 CSV_OUTPUT_DIR="$MAIN_OUTPUT_DIR/csv"
 CURRENT_DATE=$(date +%Y-%m-%d)
