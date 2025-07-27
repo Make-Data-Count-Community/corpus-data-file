@@ -9,8 +9,6 @@ from dotenv import load_dotenv
 project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 dotenv_path = os.path.join(project_root, '.env')
 
-print(f"{dotenv_path}")
-
 load_dotenv(dotenv_path, override=True)
 
 conn_params = {
@@ -80,7 +78,7 @@ def fetch_ror_by_query(query):
         query = f'"{query}"'
 
     response = requests.get(f"{ROR_API_BASE_URL}?query={query}")
-    print(f"Fetching ROR by query: {query}, status code: {response.status_code}")
+
     if response.status_code == 200:
         data = response.json()
 
@@ -94,7 +92,7 @@ def fetch_ror_by_query(query):
 def fetch_ror_by_id(ror_id):
     """Fetch ROR name by its ID."""
     response = requests.get(f"{ROR_API_BASE_URL}/{ror_id}")
-    print(f"Fetching ROR by ID: {ror_id}, status code: {response.status_code}")
+
     if response.status_code == 200:
         data = response.json()
         return data.get("id"), data.get("name")
@@ -104,7 +102,7 @@ def fetch_ror_by_id(ror_id):
 def fetch_ror_by_title(title):
     """Fetch ROR name by its ID."""
     response = requests.get(f"{ROR_API_BASE_URL}?affiliation={title}")
-    print(f"Fetching ROR by title: {title}, status code: {response.status_code}")
+
     if response.status_code == 200:
         data = response.json()
         matching_item = next(
