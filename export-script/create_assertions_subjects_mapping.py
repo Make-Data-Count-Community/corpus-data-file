@@ -72,8 +72,8 @@ repository_subject_mapping = {
     'e5960008-7a81-46b1-b526-d7dbea7e2c93': ['biological sciences', 'basic medicine'],
     '87646104-e5ef-494b-b2f3-a46c9572e003': ['biological sciences', 'basic medicine', 'physical sciences', 'chemical sciences'],
     'd3ee57d1-bce4-437d-b054-e686d9abc727': ['basic medicine', 'chemical sciences', 'biological sciences'],
-    '509bf805-f2a6-4758-94e4-ca28f49b7b54': ['biological sciences'],
-    '04c26ce0-5583-4dbc-98f0-465ab046bf1c': ['biological sciences', 'basic medicine'],
+    '9c0f9579-4f8d-4563-a35f-72cb536050e8': ['biological sciences'],
+    '93e2edcd-ce4b-4370-8d2f-1771a578dace': ['biological sciences', 'basic medicine'],
     'f99f9396-1377-4423-8165-6731ba593ddf': ['biological sciences', 'basic medicine']
 }
 
@@ -210,9 +210,9 @@ def process_repository(repo_id, subject_ids):
 
 
 def main():
-    # add_unique_constraint()
-    # insert_missing_subjects()
-    # lowercase_subject_titles()
+    add_unique_constraint()
+    insert_missing_subjects()
+    lowercase_subject_titles()
 
     for repository, subjects in repository_subject_mapping.items():
         subject_ids = fetch_subject_ids(subjects)
