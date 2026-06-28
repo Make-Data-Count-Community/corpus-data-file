@@ -71,11 +71,15 @@ repository_subject_mapping = {
     '54753603-c263-4cc0-bd65-57c39b5a20f6': ['biological sciences', 'basic medicine'],
     'e5960008-7a81-46b1-b526-d7dbea7e2c93': ['biological sciences', 'basic medicine'],
     '87646104-e5ef-494b-b2f3-a46c9572e003': ['biological sciences', 'basic medicine', 'physical sciences', 'chemical sciences'],
-    'd3ee57d1-bce4-437d-b054-e686d9abc727': ['basic medicine', 'chemical sciences', 'biological sciences']
+    'd3ee57d1-bce4-437d-b054-e686d9abc727': ['basic medicine', 'chemical sciences', 'biological sciences'],
+    '9c0f9579-4f8d-4563-a35f-72cb536050e8': ['biological sciences'],
+    '93e2edcd-ce4b-4370-8d2f-1771a578dace': ['biological sciences', 'basic medicine'],
+    'f99f9396-1377-4423-8165-6731ba593ddf': ['biological sciences', 'basic medicine']
 }
 
 def get_connection():
     return psycopg2.connect(**conn_params)
+
 
 def add_unique_constraint():
     """Adds a unique constraint to the title column in the subjects table if it does not already exist."""
@@ -104,6 +108,7 @@ def add_unique_constraint():
         cur.close()
         conn.close()
 
+
 def lowercase_subject_titles():
     """Converts all subject titles in the subjects table to lowercase."""
     conn = get_connection()
@@ -113,6 +118,7 @@ def lowercase_subject_titles():
     cur.close()
     conn.close()
     logger.info("Converted all subject titles to lowercase.")
+
 
 def insert_missing_subjects():
     """Inserts subjects into the database if they do not exist."""
@@ -149,6 +155,7 @@ def fetch_subject_ids(subjects):
     conn.close()
     return subject_ids
 
+
 def insert_batch(batch):
     conn = get_connection()
     cur = conn.cursor()
@@ -160,15 +167,16 @@ def insert_batch(batch):
     cur.close()
     conn.close()
 
+
 def process_repository(repo_id, subject_ids):
     conn = get_connection()
     cur = conn.cursor()
     logger.info(f"Processing repository_id: {repo_id}")
 
-    # Fetch assertion IDs
+    # Fetch assertion IDs created after July 1, 2025(v4 ingestion)
     cur.execute("""
         SELECT id FROM assertions
-        WHERE repository_id = %s;
+        WHERE repository_id = %s AND created >= '2025-07-01';
     """, (repo_id,))
     assertion_ids = [row[0] for row in cur.fetchall()]
 
@@ -199,6 +207,7 @@ def process_repository(repo_id, subject_ids):
     if batch.tell() > 0:
         batch.seek(0)
         insert_batch(batch)
+
 
 def main():
     add_unique_constraint()

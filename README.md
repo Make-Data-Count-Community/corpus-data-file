@@ -376,3 +376,57 @@ COMMIT;
 - **Affiliations Removed (without related assertions)**: 6,199
 - **Invalid Citations Removed**: 44,097
 - **Final Total Records**: 5,550,041
+
+## V4 Updates: EuropePMC Data Processing
+
+### Overview
+Version 4 introduces support for processing EuropePMC dataset citations through automated data collection, mapping, and standardization.
+
+### Features
+- Automated downloading of EuropePMC dataset citation files
+- PMCID to DOI mapping using multiple sources
+- Repository name standardization
+- Rate-limited API interactions with both EuropePMC and DataCite
+- Persistent caching to improve performance on subsequent runs
+
+### Setup and Usage
+
+#### Step 1: Download EuropePMC Data
+Run the downloader script to fetch all necessary files:
+```bash
+chmod +x ./corpus-v4/eupmc_file_downloader.sh
+./corpus-v4/eupmc_file_downloader.sh
+```
+
+This script will:
+- Create a directory for raw data (`europepmc_raw_data`)
+- Download CSV files from EuropePMC TextMinedTerms
+- Download XML files from EuropePMC PMCXMLData
+- Download and extract the PMID-PMCID-DOI mapping file
+
+#### Step 2: Process the Downloaded Data
+Run the Python script to process the files:
+```bash
+cd corpus-v4
+python eupmc_reformat_csv.py
+```
+
+The script processes each CSV file to:
+1. Map PMCIDs to DOIs using:
+   - The downloaded DOI mapping file
+   - A local cache of previous API responses
+   - The EuropePMC API (with rate limiting)
+2. Standardize repository names using the provided mapping file
+3. Generate formatted CSV files with columns:
+   - `repository`: Standardized repository name
+   - `dataset`: Dataset ID
+   - `publication`: Full DOI URL format (https://doi.org/10.XXXX/XXXXX)
+
+### File Descriptions
+- `eupmc_file_downloader.sh`: Downloads necessary files from EuropePMC
+- `eupmc_reformat_csv.py`: Processes downloaded CSVs and creates formatted output
+- `repository_mapping.json`: Maps repository codes to standardized names
+
+### Output
+The script generates formatted CSV files in the `europepmc_processed_data` directory, with one file per repository dataset. It also maintains an API cache to improve performance on subsequent runs.
+```

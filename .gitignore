@@ -1,7 +1,11 @@
 data-citation-corpus-v1.1-output/**
 .env
+.vscode/
 
 # Virtual environments
 accession_number_validation/**env
 
 accession_number_validation/accession_number_validation_data
+
+corpus-v4/data_ingestion/europepmc_raw_data
+corpus-v4/data_ingestion/europepmc_processed_data
